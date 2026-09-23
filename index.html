@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Idea Savings Estimator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root{
+    --navy:#1F3864;
+    --light-navy:#2E5395;
+    --gold:#BF8F00;
+    --yellow:#FFF2CC;
+    --grey:#F2F2F2;
+    --kpi-bg:#D9E1F2;
+    --green:#C6EFCE;
+    --amber:#FFEB9C;
+    --red:#FFC7CE;
+    --teal-bg:#D9F2EA;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:"Segoe UI", Arial, sans-serif;
+    margin:0; padding:0;
+    background:#f4f6fa;
+    color:#222;
+  }
+  header{
+    background:var(--navy);
+    color:#fff;
+    padding:20px 24px;
+    text-align:center;
+  }
+  header h1{margin:0; font-size:22px;}
+  header p{margin:6px 0 0; font-size:13px; color:#cdd7ee;}
+
+  main{
+    max-width:900px;
+    margin:24px auto;
+    padding:0 16px 40px;
+  }
+
+  /* Tabs */
+  .tab-bar{
+    display:flex;
+    gap:8px;
+    max-width:900px;
+    margin:20px auto -6px;
+    padding:0 16px;
+  }
+  .tab-btn{
+    flex:1;
+    background:#e4e9f3;
+    color:var(--navy);
+    border:none;
+    padding:14px 10px;
+    border-radius:10px 10px 0 0;
+    cursor:pointer;
+    font-size:14.5px;
+    font-weight:700;
+    transition:background .15s, color .15s;
+  }
+  .tab-btn.active{
+    background:#fff;
+    color:var(--navy);
+    box-shadow:0 -2px 6px rgba(0,0,0,0.08);
+  }
+  .tab-btn:not(.active):hover{background:#d5dcee;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .panel{
+    background:#fff;
+    border-radius:10px;
+    padding:20px 24px;
+    box-shadow:0 1px 6px rgba(0,0,0,0.12);
+    margin-bottom:22px;
+  }
+  .panel h2{
+    margin-top:0;
+    color:var(--navy);
+    font-size:17px;
+    border-bottom:2px solid var(--kpi-bg);
+    padding-bottom:10px;
+  }
+  .panel h2.cost-h2{border-bottom:2px solid var(--teal-bg);}
+
+  .field-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px 24px;
+  }
+  @media (max-width:640px){ .field-grid{grid-template-columns:1fr;} }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+  }
+  .field label{
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:5px;
+    color:#333;
+  }
+  .field small{
+    color:#777;
+    font-weight:400;
+    font-size:11.5px;
+  }
+  .field input{
+    background:var(--yellow);
+    border:1px solid #e0c97a;
+    border-radius:6px;
+    padding:9px 10px;
+    font-size:14px;
+  }
+  .field input:focus{
+    outline:2px solid var(--gold);
+  }
+  .field.cost-field input{
+    background:#EAF7F1;
+    border:1px solid #9ed6bb;
+  }
+  .field.cost-field input:focus{
+    outline:2px solid #2FA36B;
+  }
+
+  .section-label{
+    grid-column:1 / -1;
+    font-weight:700;
+    color:var(--light-navy);
+    margin-top:6px;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+  }
+  .section-label.cost-label{color:#1E8A5A;}
+  .section-label .optional-tag{
+    text-transform:none;
+    font-weight:600;
+    letter-spacing:0;
+    color:#888;
+    font-size:12px;
+  }
+
+  /* Results */
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .kpi-card{
+    background:var(--kpi-bg);
+    border-radius:8px;
+    padding:14px 10px;
+    text-align:center;
+  }
+  .kpi-card.cost-kpi{background:var(--teal-bg);}
+  .kpi-card .label{
+    font-size:11px;
+    font-weight:700;
+    color:var(--navy);
+    text-transform:uppercase;
+    margin-bottom:6px;
+    letter-spacing:.3px;
+  }
+  .kpi-card .value{
+    font-size:20px;
+    font-weight:800;
+    color:var(--navy);
+  }
+
+  .priority-badge{
+    display:inline-block;
+    padding:6px 16px;
+    border-radius:20px;
+    font-weight:700;
+    font-size:13px;
+    margin-top:6px;
+  }
+  .priority-Quick{background:var(--green); color:#1e5b28;}
+  .priority-Strategic{background:var(--amber); color:#7a5b00;}
+  .priority-Low{background:var(--red); color:#7a1f28;}
+
+  table.breakdown{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:14px;
+    font-size:13.5px;
+  }
+  table.breakdown th{
+    background:var(--light-navy);
+    color:#fff;
+    text-align:left;
+    padding:8px 10px;
+  }
+  table.breakdown th.cost-th{background:#1E8A5A;}
+  table.breakdown td{
+    padding:8px 10px;
+    border-bottom:1px solid #eee;
+  }
+  table.breakdown tr:last-child td{
+    font-weight:700;
+    background:var(--kpi-bg);
+  }
+  table.breakdown.cost-table tr:last-child td{
+    background:var(--teal-bg);
+  }
+
+  .btn-row{
+    display:flex;
+    gap:10px;
+    margin-top:8px;
+    flex-wrap:wrap;
+  }
+  .btn{
+    background:var(--navy);
+    color:#fff;
+    border:none;
+    padding:10px 18px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:14px;
+    font-weight:600;
+  }
+  .btn:hover{background:var(--light-navy);}
+  .btn.secondary{background:#6c757d;}
+  .btn.secondary:hover{background:#565e64;}
+  .btn.cost-btn{background:#1E8A5A;}
+  .btn.cost-btn:hover{background:#177047;}
+
+  .note{
+    font-size:12px;
+    color:#777;
+    margin-top:10px;
+    line-height:1.6;
+  }
+  footer{
+    text-align:center;
+    padding:16px;
+    font-size:11px;
+    color:#888;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="mainTitle">🧮 Idea Savings Estimator</h1>
+  <p id="mainSub">Choose a calculator below — Soft Savings (hours) or Hard Savings (dollars).</p>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="tabBtnTime">⏱️ Soft Savings Calculator</button>
+  <button class="tab-btn" id="tabBtnCost">💰 Hard Savings Calculator</button>
+</div>
+
+<main>
+
+  <!-- ============================================================= -->
+  <!-- TAB 1: TIME SAVINGS CALCULATOR                                 -->
+  <!-- ============================================================= -->
+  <section class="tab-panel active" id="panelTime">
+
+  <div class="panel">
+    <h2>Project Details</h2>
+    <div class="field-grid">
+      <div class="field" style="grid-column:1/-1;">
+        <label for="ideaName">Idea / Project Name</label>
+        <input type="text" id="ideaName" placeholder="e.g., Automated Engineering Report Generator" value="Automated Engineering Report Generator">
+      </div>
+
+      <div class="section-label">Step 1 — Time Saved</div>
+      <div class="field">
+        <label>Time Saved per Week <span style="color:#c00;">*</span><br><small>Combined time freed up, all staff</small></label>
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1;">
+            <input type="number" id="hoursWkH" value="0" step="any" min="0" placeholder="Hours">
+            <small style="display:block; margin-top:3px; color:#777;">Hours</small>
+          </div>
+          <div style="flex:1;">
+            <input type="number" id="hoursWkM" value="0" step="any" min="0" max="59" placeholder="Minutes">
+            <small style="display:block; margin-top:3px; color:#777;">Minutes</small>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="weeksYr">Working Weeks per Year <span style="color:#c00;">*</span><br><small>Typically 48 (52 minus holidays)</small></label>
+        <input type="number" id="weeksYr" value="48" step="any">
+      </div>
+
+      <div class="section-label">Step 2 — Time Invested <span class="optional-tag">(Optional)</span></div>
+      <div class="field">
+        <label for="oneTime">One-Time Implementation Effort (hours)<br><small>Build, integration, training time</small></label>
+        <input type="number" id="oneTime" value="0" step="any">
+      </div>
+      <div class="field">
+        <label for="ongoing">Annual Ongoing Maintenance (hours/year)<br><small>Upkeep, support, administration time</small></label>
+        <input type="number" id="ongoing" value="0" step="any">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="resetBtn">↺ Reset to Defaults</button>
+      <button class="btn secondary" id="clearBtn">🗑️ Clear All Fields</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Results</h2>
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="label">Annual Hours Saved</div><div class="value" id="outAnnual">0 hrs</div></div>
+      <div class="kpi-card"><div class="label">Net Hours Saved (Yr 1)</div><div class="value" id="outNet1">0 hrs</div></div>
+      <div class="kpi-card"><div class="label">Payback Period</div><div class="value" id="outPayback">0 mo</div></div>
+      <div class="kpi-card"><div class="label">3-Yr Efficiency Ratio</div><div class="value" id="outRatio">0×</div></div>
+    </div>
+    <div style="text-align:center;">
+      <span class="priority-badge" id="priorityBadge">—</span>
+    </div>
+
+    <table class="breakdown">
+      <thead><tr><th>Time Flow</th><th>Year 1</th><th>Year 2</th><th>Year 3</th><th>3-Year Total</th></tr></thead>
+      <tbody>
+        <tr><td>Gross Hours Saved</td><td id="y1b">0</td><td id="y2b">0</td><td id="y3b">0</td><td id="y3tb">0</td></tr>
+        <tr><td>Hours Invested (Implementation + Maintenance)</td><td id="y1c">0</td><td id="y2c">0</td><td id="y3c">0</td><td id="y3tc">0</td></tr>
+        <tr><td>Net Hours Saved</td><td id="y1n">0</td><td id="y2n">0</td><td id="y3n">0</td><td id="y3tn">0</td></tr>
+      </tbody>
+    </table>
+
+    <p class="note">
+      <b>Annual Hours Saved</b> = Hours Saved/Week × Working Weeks/Year.&nbsp;
+      <b>Payback Period</b> = Implementation Hours ÷ (Monthly Net Hours Saved after maintenance).&nbsp;
+      <b>3-Yr Efficiency Ratio</b> = 3-Yr Gross Hours Saved ÷ 3-Yr Hours Invested.&nbsp;
+      Priority: <b>Quick Win</b> ≤ 6 months payback, <b>Strategic</b> ≤ 18 months, otherwise <b>Low Priority</b>.
+      No dollar values are calculated or displayed in this tool. Step 2 fields are optional — leave as 0 if not applicable, results will still calculate.
+    </p>
+  </div>
+
+  </section>
+
+  <!-- ============================================================= -->
+  <!-- TAB 2: PART / COMPONENT COST-SAVINGS CALCULATOR                -->
+  <!-- ============================================================= -->
+  <section class="tab-panel" id="panelCost">
+
+  <div class="panel">
+    <h2 class="cost-h2">Part / Component Details</h2>
+    <div class="field-grid">
+      <div class="field" style="grid-column:1/-1;">
+        <label for="partName">Part / Component Name</label>
+        <input type="text" id="partName" placeholder="e.g., Bracket eliminated via design consolidation" value="Bracket Eliminated via Design Consolidation">
+      </div>
+
+      <div class="section-label cost-label">Step 1 — Piece-Cost Impact</div>
+      <div class="field cost-field">
+        <label for="currentCost">Current Piece Cost ($/unit)<br><small>Cost of the part/component being eliminated or reduced</small></label>
+        <input type="number" id="currentCost" value="0" step="any">
+      </div>
+      <div class="field cost-field">
+        <label for="newCost">New Piece Cost ($/unit)<br><small>Cost of replacement solution, if any (0 if fully eliminated)</small></label>
+        <input type="number" id="newCost" value="0" step="any">
+      </div>
+      <div class="field cost-field">
+        <label for="otherSavings">Other Savings per Unit ($/unit)<br><small>Freight, assembly labor, warranty, packaging, etc.</small></label>
+        <input type="number" id="otherSavings" value="0" step="any">
+      </div>
+
+      <div class="section-label cost-label">Step 2 — Volume <span class="optional-tag">(Optional)</span></div>
+      <div class="field cost-field">
+        <label for="annualVolume">Annual Production Volume (units/year)<br><small>Expected annual build volume</small></label>
+        <input type="number" id="annualVolume" value="0" step="any">
+      </div>
+
+      <div class="section-label cost-label">Step 3 — Investment to Implement Change <span class="optional-tag">(Optional)</span></div>
+      <div class="field cost-field">
+        <label for="oneTimeCost">One-Time Implementation Cost ($)<br><small>Engineering, validation, tooling change, retooling</small></label>
+        <input type="number" id="oneTimeCost" value="0" step="any">
+      </div>
+      <div class="field cost-field">
+        <label for="ongoingCost">Annual Ongoing Cost ($/year)<br><small>Any added maintenance/support cost of new solution (0 if none)</small></label>
+        <input type="number" id="ongoingCost" value="0" step="any">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn cost-btn" id="resetCostBtn">↺ Reset to Defaults</button>
+      <button class="btn secondary" id="clearCostBtn">🗑️ Clear All Fields</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2 class="cost-h2">Results</h2>
+    <div class="kpi-row">
+      <div class="kpi-card cost-kpi"><div class="label">Savings per Unit</div><div class="value" id="outPerUnit">$0.00</div></div>
+      <div class="kpi-card cost-kpi"><div class="label">Annual Cost Savings</div><div class="value" id="outAnnualCost">$0</div></div>
+      <div class="kpi-card cost-kpi"><div class="label">Net Savings (Yr 1)</div><div class="value" id="outNetCost1">$0</div></div>
+      <div class="kpi-card cost-kpi"><div class="label">Payback Period</div><div class="value" id="outPaybackCost">0 mo</div></div>
+      <div class="kpi-card cost-kpi"><div class="label">3-Yr ROI</div><div class="value" id="outRoiCost">0×</div></div>
+    </div>
+    <div style="text-align:center;">
+      <span class="priority-badge" id="priorityBadgeCost">—</span>
+    </div>
+
+    <table class="breakdown cost-table">
+      <thead><tr><th class="cost-th">Cost Flow</th><th class="cost-th">Year 1</th><th class="cost-th">Year 2</th><th class="cost-th">Year 3</th><th class="cost-th">3-Year Total</th></tr></thead>
+      <tbody>
+        <tr><td>Gross Cost Savings</td><td id="cy1b">$0</td><td id="cy2b">$0</td><td id="cy3b">$0</td><td id="cy3tb">$0</td></tr>
+        <tr><td>Cost Invested (Implementation + Ongoing)</td><td id="cy1c">$0</td><td id="cy2c">$0</td><td id="cy3c">$0</td><td id="cy3tc">$0</td></tr>
+        <tr><td>Net Cost Savings</td><td id="cy1n">$0</td><td id="cy2n">$0</td><td id="cy3n">$0</td><td id="cy3tn">$0</td></tr>
+      </tbody>
+    </table>
+
+    <p class="note">
+      <b>Savings per Unit</b> = (Current Piece Cost − New Piece Cost) + Other Savings per Unit.&nbsp;
+      <b>Annual Cost Savings</b> = Savings per Unit × Annual Volume − Annual Ongoing Cost.&nbsp;
+      <b>Payback Period</b> = One-Time Implementation Cost ÷ (Monthly Net Cost Savings after ongoing cost).&nbsp;
+      <b>3-Yr ROI</b> = 3-Yr Gross Cost Savings ÷ 3-Yr Cost Invested.&nbsp;
+      Priority: <b>Quick Win</b> ≤ 6 months payback, <b>Strategic</b> ≤ 18 months, otherwise <b>Low Priority</b>.
+      Steps 2 and 3 are optional — leave as 0 if not applicable, results will still calculate.
+    </p>
+  </div>
+
+  </section>
+
+</main>
+
+<footer>Idea Savings Estimator — runs entirely in your browser, no data leaves your device.</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ---------------- TAB SWITCHING ---------------- */
+const tabBtnTime = $("tabBtnTime");
+const tabBtnCost = $("tabBtnCost");
+const panelTime = $("panelTime");
+const panelCost = $("panelCost");
+const mainTitle = $("mainTitle");
+const mainSub = $("mainSub");
+
+function showTime(){
+  tabBtnTime.classList.add("active");
+  tabBtnCost.classList.remove("active");
+  panelTime.classList.add("active");
+  panelCost.classList.remove("active");
+  mainTitle.textContent = "⏱️ Idea Savings Estimator — Soft Savings";
+  mainSub.textContent = "Enter your idea's time details below — hours saved, payback period, and 3-year efficiency calculate automatically. No dollar figures are used.";
+}
+function showCost(){
+  tabBtnCost.classList.add("active");
+  tabBtnTime.classList.remove("active");
+  panelCost.classList.add("active");
+  panelTime.classList.remove("active");
+  mainTitle.textContent = "💰 Idea Savings Estimator — Hard Savings";
+  mainSub.textContent = "Enter part/component cost details below to calculate savings from eliminating or reducing the cost of a part — payback period and 3-year ROI calculate automatically.";
+}
+tabBtnTime.addEventListener("click", showTime);
+tabBtnCost.addEventListener("click", showCost);
+
+/* ================================================================ */
+/* TAB 1 LOGIC — TIME SAVINGS                                        */
+/* ================================================================ */
+const fields = ["hoursWkH","hoursWkM","weeksYr","oneTime","ongoing"];
+const DEFAULTS = {hoursWkH:0, hoursWkM:0, weeksYr:48, oneTime:0, ongoing:0};
+
+function num(id){
+  const v = parseFloat($(id).value);
+  return isNaN(v) ? 0 : v;
+}
+
+const fmtHrs = n => Math.round(n).toLocaleString("en-US") + " hrs";
+const fmtMonths = n => (n===null || isNaN(n)) ? "N/A" : n.toFixed(1) + " mo";
+const fmtRatio = n => (n===null || isNaN(n)) ? "N/A" : n.toFixed(1) + "×";
+
+function calculate(){
+  const hoursWkH = num("hoursWkH");
+  const hoursWkM = num("hoursWkM");
+  const hoursWk = hoursWkH + (hoursWkM / 60);
+  const weeksYr = num("weeksYr");
+  const oneTime = num("oneTime");
+  const ongoing = num("ongoing");
+
+  const annualHours = hoursWk * weeksYr;
+  const net1 = annualHours - oneTime - ongoing;
+
+  const monthlyNet = (annualHours - ongoing) / 12;
+  let payback = null;
+  if (oneTime === 0) payback = 0;
+  else if (monthlyNet > 0) payback = oneTime / monthlyNet;
+
+  const gross3 = annualHours * 3;
+  const invested3 = oneTime + ongoing * 3;
+  const net3 = gross3 - invested3;
+  const ratio3 = invested3 > 0 ? (gross3 / invested3) : null;
+
+  let priority = "—", priorityClass = "";
+  if (payback !== null){
+    if (payback <= 6){ priority = "🚀 Quick Win"; priorityClass = "priority-Quick"; }
+    else if (payback <= 18){ priority = "🎯 Strategic"; priorityClass = "priority-Strategic"; }
+    else { priority = "🐢 Low Priority"; priorityClass = "priority-Low"; }
+  }
+
+  $("outAnnual").textContent = fmtHrs(annualHours);
+  $("outNet1").textContent = fmtHrs(net1);
+  $("outPayback").textContent = fmtMonths(payback);
+  $("outRatio").textContent = fmtRatio(ratio3);
+
+  const badge = $("priorityBadge");
+  badge.textContent = priority;
+  badge.className = "priority-badge " + priorityClass;
+
+  const y1cost = oneTime + ongoing;
+  const y2cost = ongoing;
+  const y3cost = ongoing;
+  $("y1b").textContent = fmtHrs(annualHours);
+  $("y2b").textContent = fmtHrs(annualHours);
+  $("y3b").textContent = fmtHrs(annualHours);
+  $("y3tb").textContent = fmtHrs(gross3);
+
+  $("y1c").textContent = fmtHrs(y1cost);
+  $("y2c").textContent = fmtHrs(y2cost);
+  $("y3c").textContent = fmtHrs(y3cost);
+  $("y3tc").textContent = fmtHrs(invested3);
+
+  $("y1n").textContent = fmtHrs(annualHours - y1cost);
+  $("y2n").textContent = fmtHrs(annualHours - y2cost);
+  $("y3n").textContent = fmtHrs(annualHours - y3cost);
+  $("y3tn").textContent = fmtHrs(net3);
+}
+
+fields.forEach(id => $(id).addEventListener("input", calculate));
+$("ideaName").addEventListener("input", calculate);
+
+$("resetBtn").addEventListener("click", ()=>{
+  fields.forEach(id => $(id).value = DEFAULTS[id]);
+  $("ideaName").value = "Automated Engineering Report Generator";
+  calculate();
+});
+
+$("clearBtn").addEventListener("click", ()=>{
+  fields.forEach(id => $(id).value = 0);
+  $("ideaName").value = "";
+  calculate();
+});
+
+calculate();
+
+/* ================================================================ */
+/* TAB 2 LOGIC — PART / COMPONENT COST SAVINGS                       */
+/* ================================================================ */
+const costFields = ["currentCost","newCost","otherSavings","annualVolume","oneTimeCost","ongoingCost"];
+const COST_DEFAULTS = {
+  currentCost:0, newCost:0, otherSavings:0,
+  annualVolume:0, oneTimeCost:0, ongoingCost:0
+};
+
+const fmtUSD = n => {
+  const rounded = Math.round(n);
+  const sign = rounded < 0 ? "-" : "";
+  return sign + "$" + Math.abs(rounded).toLocaleString("en-US");
+};
+const fmtUSD2 = n => {
+  const sign = n < 0 ? "-" : "";
+  return sign + "$" + Math.abs(n).toFixed(2);
+};
+
+function calculateCost(){
+  const currentCost = num("currentCost");
+  const newCost = num("newCost");
+  const otherSavings = num("otherSavings");
+  const annualVolume = num("annualVolume");
+  const oneTimeCost = num("oneTimeCost");
+  const ongoingCost = num("ongoingCost");
+
+  const perUnitSavings = (currentCost - newCost) + otherSavings;
+  const grossAnnual = perUnitSavings * annualVolume;
+  const annualNetCash = grossAnnual - ongoingCost; // savings net of ongoing cost, before one-time
+  const net1 = annualNetCash - oneTimeCost;
+
+  const monthlyNet = annualNetCash / 12;
+  let payback = null;
+  if (oneTimeCost === 0) payback = 0;
+  else if (monthlyNet > 0) payback = oneTimeCost / monthlyNet;
+
+  const gross3 = grossAnnual * 3;
+  const invested3 = oneTimeCost + ongoingCost * 3;
+  const net3 = gross3 - invested3;
+  const roi3 = invested3 > 0 ? (gross3 / invested3) : null;
+
+  let priority = "—", priorityClass = "";
+  if (payback !== null){
+    if (payback <= 6){ priority = "🚀 Quick Win"; priorityClass = "priority-Quick"; }
+    else if (payback <= 18){ priority = "🎯 Strategic"; priorityClass = "priority-Strategic"; }
+    else { priority = "🐢 Low Priority"; priorityClass = "priority-Low"; }
+  }
+
+  $("outPerUnit").textContent = fmtUSD2(perUnitSavings);
+  $("outAnnualCost").textContent = fmtUSD(annualNetCash);
+  $("outNetCost1").textContent = fmtUSD(net1);
+  $("outPaybackCost").textContent = fmtMonths(payback);
+  $("outRoiCost").textContent = fmtRatio(roi3);
+
+  const badge = $("priorityBadgeCost");
+  badge.textContent = priority;
+  badge.className = "priority-badge " + priorityClass;
+
+  const y1cost = oneTimeCost + ongoingCost;
+  const y2cost = ongoingCost;
+  const y3cost = ongoingCost;
+  $("cy1b").textContent = fmtUSD(grossAnnual);
+  $("cy2b").textContent = fmtUSD(grossAnnual);
+  $("cy3b").textContent = fmtUSD(grossAnnual);
+  $("cy3tb").textContent = fmtUSD(gross3);
+
+  $("cy1c").textContent = fmtUSD(y1cost);
+  $("cy2c").textContent = fmtUSD(y2cost);
+  $("cy3c").textContent = fmtUSD(y3cost);
+  $("cy3tc").textContent = fmtUSD(invested3);
+
+  $("cy1n").textContent = fmtUSD(grossAnnual - y1cost);
+  $("cy2n").textContent = fmtUSD(grossAnnual - y2cost);
+  $("cy3n").textContent = fmtUSD(grossAnnual - y3cost);
+  $("cy3tn").textContent = fmtUSD(net3);
+}
+
+costFields.forEach(id => $(id).addEventListener("input", calculateCost));
+$("partName").addEventListener("input", calculateCost);
+
+$("resetCostBtn").addEventListener("click", ()=>{
+  costFields.forEach(id => $(id).value = COST_DEFAULTS[id]);
+  $("partName").value = "Bracket Eliminated via Design Consolidation";
+  calculateCost();
+});
+
+$("clearCostBtn").addEventListener("click", ()=>{
+  costFields.forEach(id => $(id).value = 0);
+  $("partName").value = "";
+  calculateCost();
+});
+
+calculateCost();
+</script>
+
+</body>
+</html>
